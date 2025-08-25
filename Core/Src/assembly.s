@@ -37,6 +37,11 @@ ASM_Main:
 @ TODO: Add code, labels and logic for button checks and LED patterns
 
 main_loop:
+	@Read switch states
+	LDR R4, GPIOA_BASE
+	LDR R5, [R4, #0x10]		@r5 = idr value (input pins)
+
+	
 
 
 write_leds:
