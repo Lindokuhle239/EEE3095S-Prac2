@@ -41,7 +41,16 @@ main_loop:
 	LDR R4, GPIOA_BASE
 	LDR R5, [R4, #0x10]		@r5 = idr value (input pins)
 
-	
+	@extract switch bits
+	MOV R6, R5
+
+	@default increment =1
+	MOVS R3, #1
+
+	@if SW0 is pressed
+	TST R6, #0x01
+	BNE check_sw1		@if not pressed -> skip
+	MOVS R3, #2			@increment by 2
 
 
 write_leds:
