@@ -32,6 +32,8 @@ ASM_Main:
 	STR R2, [R1, #0]
 	MOVS R2, #0         	@ NOTE: R2 will be dedicated to holding the value on the LEDs
 
+	MOVS R3, #1				@default increment = 1
+
 @ TODO: Add code, labels and logic for button checks and LED patterns
 
 main_loop:
