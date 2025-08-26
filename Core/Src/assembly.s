@@ -41,20 +41,59 @@ main_loop:
 	LDR R4, GPIOA_BASE
 	LDR R5, [R4, #0x10]		@r5 = idr value (input pins)
 
-	@extract switch bits
+	@copy input state (PA0,..PA3)
 	MOV R6, R5
 
-	@default increment =1
+	@reset and increment to default -> 1
 	MOVS R3, #1
 
-	@if SW0 is pressed
-	TST R6, #0x01
+	@if SW0 is pressed -> increment by 2 while pressed
+	MOVS R0, #1			@mask 0b0001
+	ANDS R0, R6, R0		@R0 = (inputs & 0x01)
+	CMP R0, #0
 	BNE check_sw1		@if not pressed -> skip
 	MOVS R3, #2			@increment by 2
 
+check_sw1:
+	@ while sw1 is pressed -> time should change every 0.3s
+	LDR R7, LONG_DELAY_CNT	@default long delay (0.7s)
+	MOVS R0, #2				@mask 0b0010
+	ANDS R0, R6, R0
+	CMP R0, #0
+	BNE check_sw2			@if not pressed -> keep long delay
+	LDR R7, SHORT_DELAY_CNT	@if sw1 pressed -> short delay (0.3s)
+
+check_sw2:
+	@ while sw2 is pressed -> force 0xAA (170)
+	MOVS R0, #4				@mask 0b0100
+	ANDS R0, R6, R0
+	CMP R0, #0
+	BNE check_sw3			@if not pressed -> continue
+	MOVS R2, #0xAA			@if pressed -> force pattern 0xAA (170)
+	B write_leds
+
+check_sw3:
+	@while sw3 is pressed -> freeze
+	MOVS R0, #8				@mask 0b1000
+	ANDS R0, R6, R0
+	CMP R0, #0
+	BNE do_increment		@if not pressed -> do increment
+	B delay_loop			@if pressed -> freeze
+
+do_increment:
+	ADDS R2, R2, R3		@R2 += increment
+	UXTB R2, R2 		@keep to 8 bits
 
 write_leds:
-	STR R2, [R1, #0x14]
+	STR R2, [R1, #0x14]	@write to GPIO_ODR (offset 0x14)
+
+@simple software delay using r7 and r0 as loop counter
+delay_loop:
+	MOV R0, R7
+delay_dec:
+	SUBS R0, R0, #1
+	BNE delay_dec
+
 	B main_loop
 
 @ LITERALS; DO NOT EDIT
@@ -66,5 +105,5 @@ GPIOB_BASE:  		.word 0x48000400
 MODER_OUTPUT: 		.word 0x5555
 
 @ TODO: Add your own values for these delays
-LONG_DELAY_CNT: 	.word 0
-SHORT_DELAY_CNT: 	.word 0
+LONG_DELAY_CNT: 	.word 1000000	@ 0.7s
+SHORT_DELAY_CNT: 	.word 400000	@ 0.3s
